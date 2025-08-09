@@ -12,7 +12,18 @@ This quickstart provides a hands-on introduction to setting up full end-to-end t
 
 ## Environment Setup
 
-### Option 1: Using pip (Recommended)
+### Using UV (Recommended)
+
+```bash
+# Create and activate virtual environment
+uv venv .venv
+source .venv/bin/activate
+
+# Install core dependencies
+uv pip install -r requirements.txt
+```
+
+### Alternative: Using pip
 
 ```bash
 # Create a virtual environment
@@ -26,18 +37,6 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-```
-
-### Option 2: Using uv 
-
-```bash
-# Create and activate virtual environment
-uv venv .venv
-source .venv/bin/activate
-
-# Install core dependencies
-uv pip install -r requirements.txt
 ```
 
 ## Configuration
