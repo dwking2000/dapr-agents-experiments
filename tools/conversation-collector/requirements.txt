@@ -1,0 +1,19 @@
+# Core dependencies for ConversationCollector service
+fastapi>=0.104.1
+uvicorn>=0.24.0
+dapr>=1.12.0
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+
+# For console client
+rich>=13.7.0
+click>=8.1.7
+requests>=2.31.0
+
+# For web client
+jinja2>=3.1.2
+websockets>=12.0
+
+# Development dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
