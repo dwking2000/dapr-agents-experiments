@@ -26,7 +26,11 @@
             <div class="messages-panel">
                 <div class="panel-header">
                     <h2>💬 Live Conversations</h2>
-                    <div class="message-count" id="messageCount">0 messages</div>
+                    <div class="header-controls">
+                        <button class="btn-expand-all" id="expandAllBtn" title="Expand all messages">🔽</button>
+                        <button class="btn-collapse-all" id="collapseAllBtn" title="Collapse all messages">▶️</button>
+                        <div class="message-count" id="messageCount">0 messages</div>
+                    </div>
                 </div>
                 <div class="messages-container" id="messagesContainer">
                     <div class="loading-message" id="loadingMessage">
@@ -189,15 +193,45 @@
                             Hide routine messages (like "request")
                         </label>
                     </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="collapseRoutineMessages" checked>
+                            Collapse routine messages by default
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="groupByWorkflow" checked>
+                            Group messages by workflow sessions
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Workflow Section Template -->
+    <template id="workflowTemplate">
+        <div class="workflow-section" data-workflow="">
+            <div class="workflow-header" role="button" tabindex="0">
+                <div class="workflow-info">
+                    <span class="workflow-indicator">🔽</span>
+                    <span class="workflow-id"></span>
+                    <span class="workflow-metadata"></span>
+                </div>
+                <div class="workflow-meta">
+                    <span class="workflow-status"></span>
+                    <span class="workflow-timestamp"></span>
+                </div>
+            </div>
+            <div class="workflow-messages"></div>
+        </div>
+    </template>
+
     <!-- Message Template -->
     <template id="messageTemplate">
         <div class="message" data-agent="" data-workflow="">
-            <div class="message-header">
+            <div class="message-header" role="button" tabindex="0">
                 <div class="agent-info">
                     <span class="agent-emoji"></span>
                     <span class="agent-name"></span>
@@ -207,6 +241,7 @@
                 <div class="message-meta">
                     <span class="message-type"></span>
                     <span class="timestamp"></span>
+                    <span class="expand-indicator">▼</span>
                 </div>
             </div>
             <div class="message-content"></div>

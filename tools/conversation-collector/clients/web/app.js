@@ -49,8 +49,13 @@ class AgentConversationMonitor {
             showAgentRoles: true,
             maxMessages: 100,
             autoScroll: true,
-            hideRoutineMessages: true
+            hideRoutineMessages: true,
+            collapseRoutineMessages: true,
+            groupByWorkflow: true
         };
+        
+        // Store workflow summaries for grouping
+        this.workflowSummaries = new Map();
         
         this.init();
     }
@@ -104,6 +109,15 @@ class AgentConversationMonitor {
         // Load more button
         document.getElementById('loadMoreButton').addEventListener('click', () => {
             this.loadMoreMessages();
+        });
+        
+        // Expand/Collapse all buttons
+        document.getElementById('expandAllBtn').addEventListener('click', () => {
+            this.expandAllMessages();
+        });
+        
+        document.getElementById('collapseAllBtn').addEventListener('click', () => {
+            this.collapseAllMessages();
         });
         
         // History filters
@@ -163,6 +177,18 @@ class AgentConversationMonitor {
             this.applyFilters();
         });
         
+        document.getElementById('collapseRoutineMessages').addEventListener('change', (e) => {
+            this.settings.collapseRoutineMessages = e.target.checked;
+            this.saveSettings();
+            this.renderMessages(); // Re-render to apply collapse state
+        });
+        
+        document.getElementById('groupByWorkflow').addEventListener('change', (e) => {
+            this.settings.groupByWorkflow = e.target.checked;
+            this.saveSettings();
+            this.renderMessages(); // Re-render to apply grouping
+        });
+        
         // Legacy max messages setting (keep for live mode)
         const maxMessagesEl = document.getElementById('maxMessages');
         if (maxMessagesEl) {
@@ -193,6 +219,8 @@ class AgentConversationMonitor {
         document.getElementById('showTimestamps').checked = this.settings.showTimestamps;
         document.getElementById('showAgentRoles').checked = this.settings.showAgentRoles;
         document.getElementById('hideRoutineMessages').checked = this.settings.hideRoutineMessages;
+        document.getElementById('collapseRoutineMessages').checked = this.settings.collapseRoutineMessages;
+        document.getElementById('groupByWorkflow').checked = this.settings.groupByWorkflow;
         document.getElementById('messagesPerPage').value = this.messagesPerPage;
         
         const maxMessagesEl = document.getElementById('maxMessages');
@@ -414,6 +442,9 @@ class AgentConversationMonitor {
                 this.messages = data.messages || [];
                 this.messages.reverse(); // Show oldest first
                 
+                // Load workflow summaries for grouping
+                await this.loadWorkflowSummaries();
+                
                 if (this.viewMode === 'live') {
                     this.renderMessages();
                 } else {
@@ -425,6 +456,21 @@ class AgentConversationMonitor {
             }
         } catch (error) {
             console.error('Failed to load initial messages:', error);
+        }
+    }
+    
+    async loadWorkflowSummaries() {
+        try {
+            const response = await fetch(`${this.apiUrl}/conversations/summaries`);
+            if (response.ok) {
+                const summaries = await response.json();
+                this.workflowSummaries.clear();
+                summaries.forEach(summary => {
+                    this.workflowSummaries.set(summary.workflow_id, summary);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load workflow summaries:', error);
         }
     }
     
@@ -501,6 +547,10 @@ class AgentConversationMonitor {
                 
                 this.hasMoreMessages = data.has_more || false;
                 this.filteredMessages = this.messages;
+                
+                // Load workflow summaries for grouping
+                await this.loadWorkflowSummaries();
+                
                 this.renderMessages();
                 this.updateStatistics();
                 this.updateFilterDropdowns();
@@ -770,13 +820,142 @@ class AgentConversationMonitor {
             return;
         }
         
-        messagesToRender.forEach(message => {
-            const messageElement = this.createMessageElement(message);
-            container.appendChild(messageElement);
-        });
+        if (this.settings.groupByWorkflow) {
+            this.renderGroupedByWorkflow(messagesToRender, container);
+        } else {
+            this.renderFlatMessages(messagesToRender, container);
+        }
         
         this.updateMessageCount();
         this.updatePagination();
+    }
+    
+    renderGroupedByWorkflow(messages, container) {
+        // Group messages by workflow_id
+        const workflowGroups = new Map();
+        
+        messages.forEach(message => {
+            const workflowId = message.workflow_id || 'unknown';
+            if (!workflowGroups.has(workflowId)) {
+                workflowGroups.set(workflowId, []);
+            }
+            workflowGroups.get(workflowId).push(message);
+        });
+        
+        // Sort workflows by most recent message timestamp
+        const sortedWorkflows = Array.from(workflowGroups.entries()).sort((a, b) => {
+            const aLatestTime = Math.max(...a[1].map(m => new Date(m.timestamp).getTime()));
+            const bLatestTime = Math.max(...b[1].map(m => new Date(m.timestamp).getTime()));
+            return bLatestTime - aLatestTime; // Most recent first
+        });
+        
+        // Create workflow sections
+        sortedWorkflows.forEach(([workflowId, workflowMessages]) => {
+            // Sort messages within workflow by timestamp
+            workflowMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            const workflowSection = this.createWorkflowSection(workflowId, workflowMessages);
+            container.appendChild(workflowSection);
+        });
+    }
+    
+    renderFlatMessages(messages, container) {
+        messages.forEach(message => {
+            const messageElement = this.createMessageElement(message);
+            container.appendChild(messageElement);
+        });
+    }
+    
+    createWorkflowSection(workflowId, messages) {
+        const template = document.getElementById('workflowTemplate');
+        const element = template.content.cloneNode(true);
+        const workflowDiv = element.querySelector('.workflow-section');
+        
+        workflowDiv.dataset.workflow = workflowId;
+        
+        // Get workflow summary data
+        const summary = this.workflowSummaries.get(workflowId) || {
+            workflow_id: workflowId,
+            agent_names: [...new Set(messages.map(m => m.agent_name).filter(Boolean))],
+            message_count: messages.length,
+            status: 'unknown'
+        };
+        
+        // Determine if this workflow should be collapsed by default
+        // Active workflows expanded, completed ones collapsed
+        const shouldCollapse = summary.status === 'completed' || messages.length < 5;
+        if (shouldCollapse) {
+            workflowDiv.classList.add('collapsed');
+        }
+        
+        // Add click handler for workflow expand/collapse
+        const header = element.querySelector('.workflow-header');
+        header.addEventListener('click', () => {
+            workflowDiv.classList.toggle('collapsed');
+        });
+        
+        // Handle keyboard navigation
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                workflowDiv.classList.toggle('collapsed');
+            }
+        });
+        
+        // Fill in workflow data
+        element.querySelector('.workflow-id').textContent = this.formatWorkflowId(workflowId);
+        
+        // Create metadata string
+        const agentCount = summary.agent_names.length;
+        const messageCount = summary.message_count;
+        const metadata = `${agentCount} agent${agentCount !== 1 ? 's' : ''}, ${messageCount} message${messageCount !== 1 ? 's' : ''}`;
+        element.querySelector('.workflow-metadata').textContent = metadata;
+        
+        // Set status
+        const statusElement = element.querySelector('.workflow-status');
+        statusElement.textContent = summary.status || 'active';
+        statusElement.classList.add(summary.status || 'active');
+        
+        // Set timestamp (use first message timestamp)
+        const firstMessage = messages[0];
+        if (firstMessage && firstMessage.timestamp) {
+            element.querySelector('.workflow-timestamp').textContent = this.formatWorkflowTimestamp(firstMessage.timestamp);
+        }
+        
+        // Add messages to the workflow section
+        const messagesContainer = element.querySelector('.workflow-messages');
+        messages.forEach(message => {
+            const messageElement = this.createMessageElement(message);
+            messagesContainer.appendChild(messageElement);
+        });
+        
+        return workflowDiv;
+    }
+    
+    formatWorkflowId(workflowId) {
+        // Convert "workflow_20250810_174920" to "Session 17:49:20"
+        const match = workflowId.match(/workflow_(\d{8})_(\d{6})/);
+        if (match) {
+            const timeStr = match[2];
+            const hours = timeStr.substring(0, 2);
+            const minutes = timeStr.substring(2, 4);
+            const seconds = timeStr.substring(4, 6);
+            return `Session ${hours}:${minutes}:${seconds}`;
+        }
+        return workflowId;
+    }
+    
+    formatWorkflowTimestamp(timestampStr) {
+        try {
+            const date = new Date(timestampStr);
+            return date.toLocaleTimeString('en-US', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch {
+            return '??:??';
+        }
     }
     
     createMessageElement(message) {
@@ -792,6 +971,26 @@ class AgentConversationMonitor {
         messageDiv.classList.add(colorClass);
         messageDiv.dataset.agent = agentName;
         messageDiv.dataset.workflow = message.workflow_id || '';
+        
+        // Check if this is a routine message and collapse it by default
+        const isRoutine = this.isRoutineMessage(message);
+        if (isRoutine && this.settings.collapseRoutineMessages) {
+            messageDiv.classList.add('collapsed');
+        }
+        
+        // Add click handler for expand/collapse
+        const header = element.querySelector('.message-header');
+        header.addEventListener('click', () => {
+            messageDiv.classList.toggle('collapsed');
+        });
+        
+        // Handle keyboard navigation
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                messageDiv.classList.toggle('collapsed');
+            }
+        });
         
         // Fill in message data
         element.querySelector('.agent-emoji').textContent = emoji;
@@ -969,6 +1168,20 @@ class AgentConversationMonitor {
     scrollToBottom() {
         const container = document.getElementById('messagesContainer');
         container.scrollTop = container.scrollHeight;
+    }
+    
+    expandAllMessages() {
+        const messages = document.querySelectorAll('.message.collapsed');
+        messages.forEach(message => {
+            message.classList.remove('collapsed');
+        });
+    }
+    
+    collapseAllMessages() {
+        const messages = document.querySelectorAll('.message:not(.collapsed)');
+        messages.forEach(message => {
+            message.classList.add('collapsed');
+        });
     }
 }
 

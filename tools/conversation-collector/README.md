@@ -75,6 +75,8 @@ The ConversationCollector processes raw Dapr messages into structured conversati
 **Web Interface:** Modern conversation viewer with:
 - Real-time message updates via WebSocket
 - Live and History viewing modes
+- **Collapsible workflow sessions** that group conversations by workflow ID
+- **Expandable message panels** with routine messages collapsed by default
 - Advanced filtering (time range, agent, workflow, message type)
 - Content search functionality
 - Routine message filtering to hide protocol noise
@@ -110,7 +112,8 @@ Add to existing `dapr-*.yaml` files:
 2. **Phase 2**: ✅ Console client for immediate development utility  
 3. **Phase 3**: ✅ Web frontend with real-time updates
 4. **Phase 4**: ✅ Advanced features (filtering, search, routine message filtering, statistics)
-5. **Phase 5**: 🔄 External integrations (Slack, Teams, etc.) - Future work
+5. **Phase 5**: ✅ Workflow session grouping and expandable message panels
+6. **Phase 6**: 🔄 External integrations (Slack, Teams, etc.) - Future work
 
 ## Project Structure
 
@@ -165,6 +168,8 @@ dapr run --app-id conversation-collector --app-port 8005 --dapr-http-port 8006 -
 
 - **Developer Experience**: Immediate visibility into agent conversations during development
 - **Debugging**: Quickly identify conversation flow issues and agent behavior patterns
+- **Session Organization**: Clear separation and grouping of workflow sessions for easier analysis
+- **Focused Viewing**: Expandable panels allow users to focus on relevant conversations while hiding routine protocol messages
 - **Demonstration**: Engaging way to show stakeholders how agents collaborate
 - **Monitoring**: Production-ready conversation monitoring for deployed systems
 - **Extensibility**: Clean architecture supports future integration requirements
