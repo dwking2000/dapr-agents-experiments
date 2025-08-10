@@ -9,6 +9,19 @@ This quickstart demonstrates how to create and orchestrate event-driven workflow
 
 ## Environment Setup
 
+### Using UV (Recommended)
+
+```bash
+# Create and activate virtual environment
+uv venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+```
+
+### Alternative: Using pip
+
 ```bash
 # Create a virtual environment
 python -m venv .venv
@@ -42,6 +55,239 @@ dapr init
 - `statestore.yaml`: Agent state configuration
 - `pubsub.yaml`: Pub/Sub message bus configuration
 - `workflowstate.yaml`: Workflow state configuration
+
+## Architecture Overview
+
+### High-Level System Architecture
+
+```mermaid
+graph TB
+    Client[Client Application] 
+    
+    subgraph "Application Layer"
+        Orchestrators[Workflow Orchestrators<br/>Random, RoundRobin, LLM]
+        Agents[Multi-Agent System<br/>Frodo, Gandalf, Legolas]
+    end
+    
+    subgraph "Infrastructure Layer"
+        Dapr[Dapr Runtime<br/>Pub/Sub, State, Tracing]
+        External[External Services<br/>OpenAI, Redis, Zipkin]
+    end
+
+    Client -->|HTTP Requests| Orchestrators
+    Orchestrators <-->|Event-Driven Messages| Agents
+    Orchestrators -.->|Infrastructure Services| Dapr
+    Agents -.->|Infrastructure Services| Dapr
+    Dapr -.->|Backend Services| External
+
+    classDef client fill:#e8f5e8
+    classDef app fill:#f3e5f5
+    classDef infra fill:#fff3e0
+
+    class Client client
+    class Orchestrators,Agents app
+    class Dapr,External infra
+```
+
+### Detailed Component Diagrams
+
+#### 1. Multi-Agent System Components
+
+```mermaid
+graph LR
+    subgraph "Lord of the Rings Fellowship Agents"
+        Frodo[🧙‍♂️ Frodo<br/>Hobbit Agent<br/>Ring Bearer]
+        Gandalf[🧙‍♂️ Gandalf<br/>Wizard Agent<br/>Strategic Guide]
+        Legolas[🏹 Legolas<br/>Elf Agent<br/>Scout & Marksman]
+    end
+
+    subgraph "Agent Properties"
+        Personality[Character Personalities<br/>Frodo: Humble, determined<br/>Gandalf: Wise, strategic<br/>Legolas: Swift, precise]
+        LLM[OpenAI Integration<br/>GPT-4 powered responses<br/>Character-specific prompts<br/>Context-aware conversations]
+        State[Durable State<br/>Conversation memory<br/>Agent registry<br/>Workflow context]
+    end
+
+    Frodo -.-> Personality
+    Gandalf -.-> Personality  
+    Legolas -.-> Personality
+    
+    Frodo --> LLM
+    Gandalf --> LLM
+    Legolas --> LLM
+    
+    Frodo -.-> State
+    Gandalf -.-> State
+    Legolas -.-> State
+
+    classDef agent fill:#ff5fe0
+    classDef property fill:#039300
+
+    class Frodo,Gandalf,Legolas agent
+    class Personality,LLM,State property
+```
+
+#### 2. Workflow Orchestration Strategies
+
+```mermaid
+graph LR
+    subgraph Random ["🎲 Random Orchestrator"]
+        R1[Randomly selects agents]
+        R2[Equal probability for all]
+        R3[Good for: Load balancing]
+        R4[Pattern: Unpredictable]
+    end
+
+    subgraph RoundRobin ["🔄 RoundRobin Orchestrator"]  
+        RR1[Sequential agent selection]
+        RR2[Cycles through all agents]
+        RR3[Good for: Fair distribution]
+        RR4[Pattern: Agent A → B → C → A]
+    end
+
+    subgraph LLM ["🧠 LLM Orchestrator"]
+        L1[AI-powered selection]
+        L2[Analyzes conversation context]
+        L3[Good for: Context-aware routing]
+        L4[Pattern: Best agent for task]
+    end
+
+    Random -.->|"selects from"| Agents[Frodo, Gandalf, Legolas]
+    RoundRobin -.->|"cycles through"| Agents
+    LLM -.->|"intelligently picks"| Agents
+
+    classDef random fill:#ffe6e6
+    classDef roundrobin fill:#e6f3ff
+    classDef llm fill:#e6ffe6
+    classDef agents fill:#f0f0f0
+
+    class R1,R2,R3,R4 random
+    class RR1,RR2,RR3,RR4 roundrobin
+    class L1,L2,L3,L4 llm
+    class Agents agents
+```
+
+#### 3. Dapr Infrastructure Components
+
+```mermaid
+graph TB
+    subgraph "Dapr Runtime Services"
+        PubSub[📡 Pub/Sub Messaging<br/>Redis-based message bus<br/>Topics: agent names & orchestrator]
+        State[💾 State Management<br/>Redis state stores<br/>Conversation & workflow state]
+        Actors[🎭 Actor Model<br/>Virtual actors for agents<br/>Sequential message processing]
+        Placement[🗺️ Service Discovery<br/>Actor placement service<br/>Load balancing & routing]
+    end
+
+    subgraph "Observability Stack"
+        Tracing[📊 Distributed Tracing<br/>Zipkin integration<br/>Request flow visualization]
+        Metrics[📈 Metrics Collection<br/>Agent performance data<br/>Workflow analytics]
+        Logging[📝 Structured Logging<br/>Agent conversations<br/>System diagnostics]
+    end
+
+    subgraph "External Dependencies"
+        Redis[(🗃️ Redis<br/>State & messaging backend)]
+        Zipkin[🔍 Zipkin<br/>Trace collection server]
+        OpenAI[🤖 OpenAI API<br/>LLM service provider]
+    end
+
+    PubSub -.-> Redis
+    State -.-> Redis
+    Tracing -.-> Zipkin
+    Actors -.-> Placement
+
+    classDef dapr fill:#4CAF50,color:#fff
+    classDef observability fill:#FF9800,color:#fff
+    classDef external fill:#9C27B0,color:#fff
+
+    class PubSub,State,Actors,Placement dapr
+    class Tracing,Metrics,Logging observability
+    class Redis,Zipkin,OpenAI external
+```
+
+#### 4. Communication Flow Patterns
+
+```mermaid
+graph LR
+    subgraph "Request Flow"
+        Client[Client App<br/>HTTP POST]
+        Orchestrator[Workflow<br/>Orchestrator Port 8004]
+        Agent[Selected Agent<br/>DurableAgent]
+        OpenAI[OpenAI API<br/>Chat Completion]
+    end
+
+    subgraph "Message Types"
+        Trigger[TriggerAction<br/>Agent task request]
+        Response[AgentTaskResponse<br/>Agent completion]
+        State[StateUpdate<br/>Context persistence]
+    end
+
+    Client -->|Start Workflow| Orchestrator
+    Orchestrator -->|Pub/Sub Message| Agent
+    Agent -->|LLM Request| OpenAI
+    OpenAI -->|AI Response| Agent
+    Agent -->|Pub/Sub Response| Orchestrator
+    Orchestrator -->|HTTP Response| Client
+
+    Orchestrator -.-> Trigger
+    Agent -.-> Response
+    Agent -.-> State
+
+    classDef flow fill:#ef2f0d
+    classDef message fill:#f3e5f5
+
+    class Client,Orchestrator,Agent,OpenAI flow
+    class Trigger,Response,State message
+```
+
+## Workflow Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as Orchestrator
+    participant A1 as Frodo (Hobbit)
+    participant A2 as Gandalf (Wizard)
+    participant A3 as Legolas (Elf)
+    participant R as Redis
+    participant AI as OpenAI API
+
+    Note over C,AI: Multi-Agent Workflow: "How to get to Mordor?"
+    
+    C->>O: POST /start-workflow<br/>{"task": "How to get to Mordor? We all need to help!"}
+    O->>R: Store workflow state
+    
+    loop For each turn (max 3 iterations)
+        Note over O: Select next agent<br/>(Random/RoundRobin/LLM-based)
+        O->>A1: Pub/Sub: TriggerAction<br/>topic: "Frodo"
+        A1->>R: Get conversation context
+        A1->>AI: Chat completion request<br/>with character personality
+        AI-->>A1: Character response<br/>("The path to Mordor is treacherous...")
+        A1->>R: Update conversation state
+        A1->>O: Pub/Sub: AgentTaskResponse<br/>topic: "RandomOrchestrator"
+        O->>R: Update workflow state
+        
+        Note over O: Turn 2 - Select different agent
+        O->>A2: Pub/Sub: TriggerAction<br/>topic: "Gandalf"
+        A2->>R: Get conversation context
+        A2->>AI: Chat completion request<br/>with wizard persona
+        AI-->>A2: Wisdom response<br/>("Strategy and guidance are needed...")
+        A2->>R: Update conversation state
+        A2->>O: Pub/Sub: AgentTaskResponse<br/>topic: "RandomOrchestrator"
+        O->>R: Update workflow state
+        
+        Note over O: Turn 3 - Final agent selection
+        O->>A3: Pub/Sub: TriggerAction<br/>topic: "Legolas"
+        A3->>R: Get conversation context
+        A3->>AI: Chat completion request<br/>with elf characteristics
+        AI-->>A3: Scout response<br/>("My keen eyes see the path ahead...")
+        A3->>R: Update conversation state
+        A3->>O: Pub/Sub: AgentTaskResponse<br/>topic: "RandomOrchestrator"
+        O->>R: Store final workflow state
+    end
+    
+    O->>C: Workflow completion<br/>Status: COMPLETED
+    
+    Note over C,AI: All interactions traced in Zipkin<br/>State persisted in Redis
+```
 
 ## Project Structure
 

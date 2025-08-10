@@ -1,11 +1,14 @@
-from dapr_agents import DurableAgent
+from dapr_agents import DurableAgent, OpenAIChatClient
 from dotenv import load_dotenv
 import asyncio
 import logging
+import os
 
 
 async def main():
     try:
+        llm_client = OpenAIChatClient(api_key=os.getenv("OPENAI_API_KEY"))
+        
         wizard_service = DurableAgent(
             role="Wizard",
             name="Gandalf",
@@ -17,6 +20,7 @@ async def main():
                 "Encourage allies to find strength within themselves rather than relying solely on your power.",
                 "Respond concisely, accurately, and relevantly, ensuring clarity and strict alignment with the task.",
             ],
+            llm=llm_client,
             message_bus_name="messagepubsub",
             state_store_name="workflowstatestore",
             state_key="workflow_state",
