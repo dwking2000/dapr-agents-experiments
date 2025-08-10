@@ -80,9 +80,9 @@ graph TB
     Agents -.->|Infrastructure Services| Dapr
     Dapr -.->|Backend Services| External
 
-    classDef client fill:#e8f5e8
-    classDef app fill:#f3e5f5
-    classDef infra fill:#fff3e0
+    classDef client fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef app fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef infra fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
 
     class Client client
     class Orchestrators,Agents app
@@ -119,8 +119,8 @@ graph LR
     Gandalf -.-> State
     Legolas -.-> State
 
-    classDef agent fill:#ff5fe0
-    classDef property fill:#039300
+    classDef agent fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef property fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
 
     class Frodo,Gandalf,Legolas agent
     class Personality,LLM,State property
@@ -155,10 +155,10 @@ graph LR
     RoundRobin -.->|"cycles through"| Agents
     LLM -.->|"intelligently picks"| Agents
 
-    classDef random fill:#ffe6e6
-    classDef roundrobin fill:#e6f3ff
-    classDef llm fill:#e6ffe6
-    classDef agents fill:#f0f0f0
+    classDef random fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    classDef roundrobin fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef llm fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef agents fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 
     class R1,R2,R3,R4 random
     class RR1,RR2,RR3,RR4 roundrobin
@@ -231,8 +231,8 @@ graph LR
     Agent -.-> Response
     Agent -.-> State
 
-    classDef flow fill:#ef2f0d
-    classDef message fill:#f3e5f5
+    classDef flow fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef message fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
 
     class Client,Orchestrator,Agent,OpenAI flow
     class Trigger,Response,State message

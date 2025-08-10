@@ -9,19 +9,19 @@ common:
 apps:
 - appID: HobbitApp
   appDirPath: ./services/hobbit/
-  command: ["python3", "app.py"]
+  command: ["../../.venv/bin/python", "app.py"]
 
 - appID: WizardApp
   appDirPath: ./services/wizard/
-  command: ["python3", "app.py"]
+  command: ["../../.venv/bin/python", "app.py"]
 
 - appID: ElfApp
   appDirPath: ./services/elf/
-  command: ["python3", "app.py"]
+  command: ["../../.venv/bin/python", "app.py"]
 
 - appID: WorkflowApp
   appDirPath: ./services/workflow-llm/
-  command: ["python3", "app.py"]
+  command: ["../../.venv/bin/python", "app.py"]
   appPort: 8004
 
 - appID: ClientApp
