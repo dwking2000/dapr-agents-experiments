@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dapr.clients import DaprClient
 import uvicorn
 
@@ -42,10 +44,16 @@ class ConversationCollector:
         )
         
         self._setup_routes()
+        self._setup_static_files()
         self._setup_subscriptions()
     
     def _setup_routes(self):
         """Setup REST API routes."""
+        
+        @self.app.get("/")
+        async def root():
+            """Serve the main web UI."""
+            return FileResponse("clients/web/index.html")
         
         @self.app.get("/health")
         async def health():
@@ -146,6 +154,11 @@ class ConversationCollector:
                 print(f"WebSocket error: {e}")
                 if websocket in self.websocket_connections:
                     self.websocket_connections.remove(websocket)
+    
+    def _setup_static_files(self):
+        """Setup static file serving for web UI."""
+        # Mount static files (CSS, JS, etc.)
+        self.app.mount("/static", StaticFiles(directory="clients/web", html=True), name="static")
     
     def _setup_subscriptions(self):
         """Setup Dapr pub/sub subscriptions for agent topics."""

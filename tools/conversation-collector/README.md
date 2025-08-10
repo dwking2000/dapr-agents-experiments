@@ -27,7 +27,7 @@ The Conversation Collector follows a clean separation of concerns with two disti
 ### 2. Display Clients Layer
 Multiple lightweight clients that consume the ConversationCollector API:
 - **Console Client**: Real-time terminal output for development debugging
-- **Web Frontend**: Browser-based conversation viewer for demos and monitoring
+- **Web Frontend**: Modern browser-based conversation viewer with real-time WebSocket updates, filtering, search, and routine message filtering
 - **Future Integrations**: Slack webhooks, Discord bots, Teams integration, custom dashboards
 
 ## Technical Approach
@@ -56,10 +56,11 @@ The ConversationCollector processes raw Dapr messages into structured conversati
 ```
 
 ### API Endpoints
-- `GET /conversations` - Retrieve all conversation history
+- `GET /conversations` - Retrieve conversation history with filtering (workflow, agent, message type, time range)
 - `GET /conversations/latest` - Get recent messages with configurable limit
-- `GET /conversations/workflow/{workflow_id}` - Get specific workflow conversation
-- `WebSocket /conversations/live` - Real-time conversation updates
+- `GET /conversations/summaries` - Get conversation workflow summaries
+- `WebSocket /conversations/live` - Real-time conversation updates with initial message history
+- `GET /` - Serve the web UI interface with static file support
 
 ### Display Formats
 
@@ -71,7 +72,14 @@ The ConversationCollector processes raw Dapr messages into structured conversati
 [14:32:19] 🧙‍♂️ Gandalf: Young hobbit, we must plan carefully. The Enemy has many eyes...
 ```
 
-**Web Interface:** Clean conversation bubbles with agent avatars, timestamps, and workflow context.
+**Web Interface:** Modern conversation viewer with:
+- Real-time message updates via WebSocket
+- Live and History viewing modes
+- Advanced filtering (time range, agent, workflow, message type)
+- Content search functionality
+- Routine message filtering to hide protocol noise
+- Agent statistics and workflow summaries
+- Export functionality for conversation data
 
 ## Integration Strategy
 
@@ -98,11 +106,11 @@ Add to existing `dapr-*.yaml` files:
 
 ## Development Phases
 
-1. **Phase 1**: Core ConversationCollector service with REST API
-2. **Phase 2**: Console client for immediate development utility  
-3. **Phase 3**: Simple web frontend for demo and monitoring
-4. **Phase 4**: Advanced features (filtering, search, multiple workflow support)
-5. **Phase 5**: External integrations (Slack, Teams, etc.)
+1. **Phase 1**: ✅ Core ConversationCollector service with REST API
+2. **Phase 2**: ✅ Console client for immediate development utility  
+3. **Phase 3**: ✅ Web frontend with real-time updates
+4. **Phase 4**: ✅ Advanced features (filtering, search, routine message filtering, statistics)
+5. **Phase 5**: 🔄 External integrations (Slack, Teams, etc.) - Future work
 
 ## Project Structure
 
@@ -112,15 +120,19 @@ tools/conversation-collector/
 ├── requirements.txt            # Python dependencies
 ├── services/
 │   └── collector/              # Core data collection service
-│       └── app.py              # ConversationCollector Dapr service
+│       ├── app.py              # ConversationCollector Dapr service with FastAPI
+│       ├── parser.py           # Message parsing logic
+│       └── schemas.py          # Data schemas and types
 ├── clients/                    # Display clients
 │   ├── console/                # Console viewer
 │   │   └── app.py              # Real-time terminal output
-│   └── web/                    # Web frontend
-│       ├── app.py              # Flask/FastAPI web server
-│       └── static/             # HTML, CSS, JS files
-└── components/                 # Dapr components if needed
-    └── collector-state.yaml   # State store configuration
+│   └── web/                    # Web frontend assets
+│       ├── index.html          # Modern conversation viewer UI
+│       ├── app.js              # WebSocket client and filtering logic
+│       └── styles.css          # Modern CSS with agent color themes
+└── components/                 # Dapr components
+    ├── statestore.yaml         # Redis state store configuration
+    └── pubsub.yaml             # Redis pub/sub configuration
 ```
 
 ## Usage
@@ -142,11 +154,11 @@ cd tools/conversation-collector/clients/console
 python app.py
 ```
 
-### 3. Start Web Interface (Optional)
+### 3. Start Conversation Collector Service
 ```bash
-cd tools/conversation-collector/clients/web
-python app.py
-# Open http://localhost:8006 in browser
+cd tools/conversation-collector
+dapr run --app-id conversation-collector --app-port 8005 --dapr-http-port 8006 --components-path ./components -- uv run python services/collector/app.py
+# Web interface available at http://localhost:8005
 ```
 
 ## Benefits

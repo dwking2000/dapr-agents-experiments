@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Agent Conversation Monitor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🎭 Agent Conversation Monitor</h1>
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="status-dot disconnected"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Messages Panel -->
+            <div class="messages-panel">
+                <div class="panel-header">
+                    <h2>💬 Live Conversations</h2>
+                    <div class="message-count" id="messageCount">0 messages</div>
+                </div>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="loading-message" id="loadingMessage">
+                        <div class="loading-spinner"></div>
+                        <p>Loading agent conversations...</p>
+                    </div>
+                </div>
+                <div class="messages-footer">
+                    <div class="pagination-info" id="paginationInfo"></div>
+                    <div class="view-controls" id="viewControls">
+                        <label class="auto-scroll-toggle" id="autoScrollToggle">
+                            <input type="checkbox" id="autoScrollCheckboxMain" checked>
+                            Auto-scroll to new messages
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- View Mode Panel -->
+                <div class="view-mode-panel">
+                    <h3>👁️ View Mode</h3>
+                    <div class="view-mode-tabs">
+                        <button class="tab-btn active" id="liveViewBtn">📺 Live</button>
+                        <button class="tab-btn" id="historyViewBtn">📚 History</button>
+                    </div>
+                </div>
+
+                <!-- History Filters Panel -->
+                <div class="history-filters-panel" id="historyFiltersPanel" style="display: none;">
+                    <h3>🔍 Filters</h3>
+                    
+                    <!-- Time Range Filter -->
+                    <div class="filter-group">
+                        <label>Time Range:</label>
+                        <select id="timeRangeFilter">
+                            <option value="1h">Last Hour</option>
+                            <option value="6h">Last 6 Hours</option>
+                            <option value="1d" selected>Last Day</option>
+                            <option value="3d">Last 3 Days</option>
+                            <option value="1w">Last Week</option>
+                            <option value="all">All Time</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Date Range -->
+                    <div class="custom-date-range" id="customDateRange" style="display: none;">
+                        <label>From:</label>
+                        <input type="datetime-local" id="dateFrom">
+                        <label>To:</label>
+                        <input type="datetime-local" id="dateTo">
+                        <button class="btn btn-small" id="applyDateRange">Apply</button>
+                    </div>
+
+                    <!-- Workflow Filter -->
+                    <div class="filter-group">
+                        <label>Workflow:</label>
+                        <select id="workflowFilter">
+                            <option value="">All Workflows</option>
+                        </select>
+                    </div>
+
+                    <!-- Agent Filter -->
+                    <div class="filter-group">
+                        <label>Agent:</label>
+                        <select id="agentFilter">
+                            <option value="">All Agents</option>
+                        </select>
+                    </div>
+
+                    <!-- Message Type Filter -->
+                    <div class="filter-group">
+                        <label>Message Type:</label>
+                        <select id="messageTypeFilter">
+                            <option value="">All Types</option>
+                            <option value="agent_request">Requests</option>
+                            <option value="agent_response">Responses</option>
+                            <option value="orchestrator_action">Orchestrator Actions</option>
+                            <option value="workflow_start">Workflow Start</option>
+                            <option value="workflow_end">Workflow End</option>
+                        </select>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="filter-group">
+                        <label>Search Content:</label>
+                        <input type="text" id="contentSearch" placeholder="Search messages...">
+                    </div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="stats-panel">
+                    <h3>📊 Statistics</h3>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Messages</span>
+                            <span class="stat-value" id="totalMessages">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Workflows</span>
+                            <span class="stat-value" id="activeWorkflows">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Agents</span>
+                            <span class="stat-value" id="activeAgents">0</span>
+                        </div>
+                    </div>
+                    <div class="agent-list" id="agentList"></div>
+                </div>
+
+                <!-- Controls Panel -->
+                <div class="controls-panel">
+                    <h3>🎛️ Controls</h3>
+                    <button class="btn btn-primary" id="clearButton">Clear View</button>
+                    <button class="btn btn-secondary" id="exportButton">Export Current</button>
+                    <button class="btn btn-secondary" id="refreshButton">🔄 Refresh</button>
+                    <div class="load-more-section" id="loadMoreSection" style="display: none;">
+                        <button class="btn btn-outline" id="loadMoreButton">Load More Messages</button>
+                        <span class="load-status" id="loadStatus"></span>
+                    </div>
+                </div>
+
+                <!-- Settings Panel -->
+                <div class="settings-panel">
+                    <h3>⚙️ Settings</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="showTimestamps" checked>
+                            Show timestamps
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="showAgentRoles" checked>
+                            Show agent roles
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            Messages per page:
+                            <select id="messagesPerPage">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="setting-item" id="autoScrollSetting">
+                        <label>
+                            <input type="checkbox" id="autoScrollCheckbox" checked>
+                            Auto-scroll (Live mode only)
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="hideRoutineMessages" checked>
+                            Hide routine messages (like "request")
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Template -->
+    <template id="messageTemplate">
+        <div class="message" data-agent="" data-workflow="">
+            <div class="message-header">
+                <div class="agent-info">
+                    <span class="agent-emoji"></span>
+                    <span class="agent-name"></span>
+                    <span class="agent-role"></span>
+                    <span class="turn-number"></span>
+                </div>
+                <div class="message-meta">
+                    <span class="message-type"></span>
+                    <span class="timestamp"></span>
+                </div>
+            </div>
+            <div class="message-content"></div>
+        </div>
+    </template>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
